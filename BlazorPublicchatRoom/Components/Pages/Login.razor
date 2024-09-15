@@ -1,0 +1,50 @@
+﻿@using BlazorPublicchatRoom.Components.Layout
+@using Microsoft.AspNetCore.Authentication
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authentication.Cookies
+@layout EmptyLayout
+@page "/login"
+@inject MysingleToneService MysingleTonService
+
+@inject IJSRuntime jsruntime
+
+<div class="d-grid h-100">
+    <div class="m-auto">
+        <EditForm FormName="myForm" Model="MyformModel" OnSubmit="OnSave">
+
+            <label class="form-label">Name</label>
+            <InputText class="form-control" @bind-Value=MyformModel.Name />
+            <button type="submit" class="btn btn-primary">Save</button>
+        </EditForm>
+    </div>
+</div>
+@code {
+    public class myFormClassModel
+    {
+        public string Name { get; set; }
+    }
+    [SupplyParameterFromForm(FormName = "myForm")]
+    public myFormClassModel MyformModel { get; set; } = new();
+
+    [CascadingParameter] public HttpContext httpContext { get; set; }
+
+    async Task OnSave()
+    {
+        if (MysingleTonService.IsExisted(MyformModel.Name) == false)
+        {
+            await httpContext.SignInAsync(new ClaimsPrincipal(new List<ClaimsIdentity>()
+            {
+                new ClaimsIdentity(new List<Claim>()
+                {
+                    new Claim(ClaimTypes.Name,MyformModel.Name)
+                },CookieAuthenticationDefaults.AuthenticationScheme)
+            }));
+            MysingleTonService.AddToListUsers(MyformModel.Name);
+            
+        }
+        else
+        {
+            await jsruntime.InvokeVoidAsync("alert", "name is Existed");
+        }
+    }
+}
